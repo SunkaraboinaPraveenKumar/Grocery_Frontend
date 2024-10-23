@@ -1,7 +1,7 @@
 const { default: axios } = require("axios");
 
 const axiosClient= axios.create({
-    baseURL:`http://localhost:1337/api`
+    baseURL:`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api`
 })
 
 const getCategory=()=>axiosClient.get("/categories?populate=*");
