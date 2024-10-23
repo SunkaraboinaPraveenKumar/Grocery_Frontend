@@ -1,3 +1,42 @@
+
+
+
+// const onDeleteItem = async (id) => {
+//     try {
+//         await GlobalApi.deleteCartItem(id);
+//         toast("Cart Item Deleted Successfully!!");
+//         getCartItems(); // Refresh cart list
+//     } catch (e) {
+//         toast("Error Deleting Cart Item!!");
+//         console.error(e);
+//     }
+// };
+// const onDeleteItem = (id) => {
+//     let localCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+
+//     // Find the item to be deleted and its amount
+//     const itemToDelete = localCartItems.find(item => item.id === id);
+
+//     // Filter out the deleted item from the cart
+//     localCartItems = localCartItems.filter(item => item.id !== id);
+
+//     // Update cart items in localStorage
+//     localStorage.setItem('cartItems', JSON.stringify(localCartItems));
+
+//     // Update the subtotal by subtracting the deleted item's amount
+//     const updatedSubtotal = subtotal - (itemToDelete ? itemToDelete.amount : 0);
+//     setSubTotal(updatedSubtotal);
+
+//     // Update subtotal in localStorage
+//     localStorage.setItem('amount', updatedSubtotal);
+
+//     // Update the state
+//     setCartItemList(localCartItems);
+//     setTotalCartItem(localCartItems.length); // Update cart total
+
+//     toast("Cart Item Deleted Successfully!!");
+// };
+
 import { Button } from '@/components/ui/button';
 import { CircleUserRound, LayoutGrid, Search, ShoppingBasket } from 'lucide-react';
 import Image from 'next/image';
@@ -36,12 +75,21 @@ function Header() {
     const router = useRouter();
 
     useEffect(() => {
-        // Check sessionStorage for user info and category list
         if (typeof window !== 'undefined') {
             setIsLogin(!!sessionStorage.getItem('jwt'));
             const userData = JSON.parse(sessionStorage.getItem('user'));
             setUser(userData);
+
+            // Load cart items from localStorage on mount
+            const localCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            setCartItemList(localCartItems);
+            setTotalCartItem(localCartItems.length);
+
+            // Load subtotal from localStorage on mount
+            const storedSubtotal = parseFloat(localStorage.getItem('amount')) || 0;
+            setSubTotal(storedSubtotal);
         }
+
         getCategoryList();
     }, []);
 
@@ -49,7 +97,7 @@ function Header() {
         if (user) {
             getCartItems();
         }
-    }, [user, updateCart]); // Fetch cart items when user is set or updateCart changes
+    }, [user, updateCart]);
 
     const getCategoryList = () => {
         GlobalApi.getCategory().then(resp => {
@@ -62,43 +110,23 @@ function Header() {
         router.replace("/sign-in");
     };
 
-    // const getCartItems = async () => {
-    //     if (user?.id) {
-    //         try {
-    //             const cartItemsList_ = await GlobalApi.getCartItems(user.id);
-    //             localStorage.setItem('cartItems', JSON.stringify(cartItemsList_));
-    //             const localCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-    //             setTotalCartItem(localCartItems.length);
-    //             console.log(cartItemsList_);
-    //             setTotalCartItem(cartItemsList_?.length || 0);
-    //             setCartItemList(cartItemsList_);
-    //         } catch (error) {
-    //             console.error('Failed to fetch cart items:', error);
-    //         }
-    //     } else {
-    //         console.warn('User is not logged in or user ID is not available.');
-    //     }
-    // };
-
     const getCartItems = async () => {
         if (user?.id) {
             try {
-                // Fetch current cart items from the API
                 const cartItemsList_ = await GlobalApi.getCartItems(user.id);
-    
-                // Retrieve deleted cart items from local storage
+
+                // Retrieve deleted cart items from localStorage
                 const deletedCartItems = JSON.parse(localStorage.getItem('deletedCartItems')) || [];
-    
-                // Filter out deleted cart items from the fetched cart items
-                const filteredCartItems = cartItemsList_.filter(item => 
+
+                // Filter out deleted items from fetched items
+                const filteredCartItems = cartItemsList_.filter(item =>
                     !deletedCartItems.includes(item.id)
                 );
-    
-                // Update local storage with the filtered cart items
+
+                // Update localStorage with new filtered cart items
                 localStorage.setItem('cartItems', JSON.stringify(filteredCartItems));
-    
-                // Update the total cart item count and state
-                setTotalCartItem(filteredCartItems.length>0?filteredCartItems.length:0);
+
+                setTotalCartItem(filteredCartItems.length > 0 ? filteredCartItems.length : 0);
                 setCartItemList(filteredCartItems);
             } catch (error) {
                 console.error('Failed to fetch cart items:', error);
@@ -107,85 +135,42 @@ function Header() {
             console.warn('User is not logged in or user ID is not available.');
         }
     };
-    
 
-    // const onDeleteItem = async (id) => {
-    //     try {
-    //         await GlobalApi.deleteCartItem(id);
-    //         toast("Cart Item Deleted Successfully!!");
-    //         getCartItems(); // Refresh cart list
-    //     } catch (e) {
-    //         toast("Error Deleting Cart Item!!");
-    //         console.error(e);
-    //     }
-    // };
-    // const onDeleteItem = (id) => {
-    //     let localCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-        
-    //     // Find the item to be deleted and its amount
-    //     const itemToDelete = localCartItems.find(item => item.id === id);
-        
-    //     // Filter out the deleted item from the cart
-    //     localCartItems = localCartItems.filter(item => item.id !== id);
-        
-    //     // Update cart items in localStorage
-    //     localStorage.setItem('cartItems', JSON.stringify(localCartItems));
-        
-    //     // Update the subtotal by subtracting the deleted item's amount
-    //     const updatedSubtotal = subtotal - (itemToDelete ? itemToDelete.amount : 0);
-    //     setSubTotal(updatedSubtotal);
-        
-    //     // Update subtotal in localStorage
-    //     localStorage.setItem('amount', updatedSubtotal);
-        
-    //     // Update the state
-    //     setCartItemList(localCartItems);
-    //     setTotalCartItem(localCartItems.length); // Update cart total
-    
-    //     toast("Cart Item Deleted Successfully!!");
-    // };
     const onDeleteItem = (id) => {
         let localCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
         let deletedCartItems = JSON.parse(localStorage.getItem('deletedCartItems')) || [];
         const itemToDelete = localCartItems.find(item => item.id === id);
-    
+
         // Filter out the deleted item from the cart
         localCartItems = localCartItems.filter(item => item.id !== id);
-        
-        // Update cart items in localStorage
         localStorage.setItem('cartItems', JSON.stringify(localCartItems));
-    
+
         // Store deleted item in deletedCartItems
         if (itemToDelete) {
-            deletedCartItems.push({ ...itemToDelete, userId: user.id }); // Storing userId for uniqueness
+            deletedCartItems.push({ ...itemToDelete, userId: user.id });
             localStorage.setItem('deletedCartItems', JSON.stringify(deletedCartItems));
         }
-    
+
         // Update the subtotal
         const updatedSubtotal = subtotal - (itemToDelete ? itemToDelete.amount : 0);
         setSubTotal(updatedSubtotal);
         localStorage.setItem('amount', updatedSubtotal);
         setCartItemList(localCartItems);
         setTotalCartItem(localCartItems.length);
-        
+
         toast("Cart Item Deleted Successfully!!");
     };
 
-    
-    
     useEffect(() => {
         const calculateSubtotal = () => {
             const total = cartItemsList.reduce((sum, cartItem) => sum + cartItem.amount, 0);
             setSubTotal(total);
-            
+
             // Update subtotal in localStorage
             localStorage.setItem('amount', total);
         };
         calculateSubtotal();
     }, [cartItemsList]);
-
-
-    
 
     return (
         <div className='p-5 shadow-md flex justify-between'>
@@ -240,9 +225,10 @@ function Header() {
                         <SheetClose asChild>
                             <div className='absolute w-[90%] bottom-6 flex flex-col'>
                                 <h2 className='text-lg font-bold flex justify-between m-3'>Subtotal <span>{subtotal}₹</span></h2>
-                                <Button onClick={() =>{ router.push(user?'/check-out':'/sign-in')
-                                    localStorage.setItem('price',subtotal);
-                                    localStorage.setItem('cart',cartItemsList)
+                                <Button onClick={() => {
+                                    router.push(user ? '/check-out' : '/sign-in')
+                                    localStorage.setItem('price', subtotal);
+                                    localStorage.setItem('cart', JSON.stringify(cartItemsList));
                                 }} className='w-full'>Check Out</Button>
                             </div>
                         </SheetClose>

@@ -114,44 +114,48 @@ function ProductItemDetail({ product }) {
             setUpdateCart(!updateCart);
             setLoading(false);
     
-            // Add to localStorage
-            const existingCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
-            const deletedCartItems = JSON.parse(localStorage.getItem('deletedCartItems')) || [];
+            // Check if window is defined before accessing localStorage
+            if (typeof window !== 'undefined') {
+                // Add to localStorage
+                const existingCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+                const deletedCartItems = JSON.parse(localStorage.getItem('deletedCartItems')) || [];
     
-            // Remove from deletedCartItems if it exists
-            const itemIndex = deletedCartItems.findIndex(item => item.productId === product.id && item.userId === user.id);
-            if (itemIndex !== -1) {
-                deletedCartItems.splice(itemIndex, 1); // Remove it from deleted items
-                localStorage.setItem('deletedCartItems', JSON.stringify(deletedCartItems));
+                // Remove from deletedCartItems if it exists
+                const itemIndex = deletedCartItems.findIndex(item => item.productId === product.id && item.userId === user.id);
+                if (itemIndex !== -1) {
+                    deletedCartItems.splice(itemIndex, 1); // Remove it from deleted items
+                    localStorage.setItem('deletedCartItems', JSON.stringify(deletedCartItems));
+                }
+    
+                // Check if the product already exists in localStorage cart
+                const existingItemIndex = existingCartItems.findIndex(item => item.productId === product.id);
+                
+                if (existingItemIndex !== -1) {
+                    // If item already exists, update the quantity
+                    existingCartItems[existingItemIndex].quantity += quantity;
+                } else {
+                    // Add new product to localStorage cart
+                    const newCartItem = {
+                        productId: product.id,
+                        name: product.name,
+                        price: productTotalPrice,
+                        quantity: quantity,
+                        image: product.images[0]?.url,
+                    };
+                    existingCartItems.push(newCartItem);
+                }
+    
+                // Save updated cart back to localStorage
+                localStorage.setItem('cartItems', JSON.stringify(existingCartItems));
             }
-    
-            // Check if the product already exists in localStorage cart
-            const existingItemIndex = existingCartItems.findIndex(item => item.productId === product.id);
-            
-            if (existingItemIndex !== -1) {
-                // If item already exists, update the quantity
-                existingCartItems[existingItemIndex].quantity += quantity;
-            } else {
-                // Add new product to localStorage cart
-                const newCartItem = {
-                    productId: product.id,
-                    name: product.name,
-                    price: productTotalPrice,
-                    quantity: quantity,
-                    image: product.images[0]?.url,
-                };
-                existingCartItems.push(newCartItem);
-            }
-    
-            // Save updated cart back to localStorage
-            localStorage.setItem('cartItems', JSON.stringify(existingCartItems));
     
         }, (e) => {
             console.log(e.response?.data);
-            setLoading(false)
-            toast('Error While Adding Item to Cart')
+            setLoading(false);
+            toast('Error While Adding Item to Cart');
         });
     };
+    
     
     return (
         <div className='grid grid-cols-1 md:grid-cols-2 p-4 md:p-7 bg-white text-black gap-5'>
